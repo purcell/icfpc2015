@@ -2,8 +2,9 @@ module GamePlay
        --(createGame)
        where
 
-import           Data.List (intercalate)
-import           Rotation  (rotateAntiClockwiseAround, rotateClockwiseAround)
+import           Data.List  (intercalate)
+import           Data.Maybe (mapMaybe)
+import           Rotation   (rotateAntiClockwiseAround, rotateClockwiseAround)
 import           Types
 
 ------------------------------------------------------------------------------
@@ -66,20 +67,61 @@ spawnUnit board (Unit cells pivot) = Unit { unitMembers = map offsetCell cells
 applyOffsets :: Int -> Int -> Cell -> Cell
 applyOffsets x y (Cell cx cy) = Cell (x + cx) (y + cy)
 
-lockUnit :: Board -> Unit -> Board
-lockUnit board unit = board { boardFilled = boardFilled board ++ unitMembers unit }
+
+
 
 isValidUnitPosition :: Board -> Unit -> Bool
 isValidUnitPosition board unit = all (\(Cell x y) -> isValidPosition board x y) (unitMembers unit)
 
 unitRotateClockwise :: Unit -> Unit
-unitRotateClockwise (Unit cells pivot)= Unit (rotateClockwiseAround pivot cells) pivot
+unitRotateClockwise (Unit cells pivot) = Unit (rotateClockwiseAround pivot cells) pivot
 
 unitRotateAntiClockwise :: Unit -> Unit
-unitRotateAntiClockwise (Unit cells pivot)= Unit (rotateAntiClockwiseAround pivot cells) pivot
+unitRotateAntiClockwise (Unit cells pivot) = Unit (rotateAntiClockwiseAround pivot cells) pivot
 
 unitTranslate :: (Cell -> Cell) -> Unit -> Unit
 unitTranslate f (Unit cells pivot) = Unit (map f cells) (f pivot)
+
+
+
+------------------------------------------------------------------------------
+-- Updating the board and tracking scores
+------------------------------------------------------------------------------
+
+data ScoringFactors = ScoringFactors { sfUnit :: Unit, sfLinesCleared :: Int }
+
+addUnitCellsToBoard :: Board -> Unit -> Board
+addUnitCellsToBoard board unit = board { boardFilled = boardFilled board ++ unitMembers unit }
+
+
+
+lockUnit :: Board -> Unit -> Board
+lockUnit board unit = newBoard
+  where (linesCleared, newBoard) = clearLines $ addUnitCellsToBoard board unit
+
+
+clearLines :: Board -> (Int, Board)
+clearLines board = (numFullLines, board { boardFilled = movedCells numFullLines })
+  where
+    numFullLines = linesToClear board
+    movedCells n = mapMaybe (moveCellDown n) (boardFilled board)
+    moveCellDown n (Cell x y) = if y' > (boardHeight board - 1) then Nothing
+                                else Just (Cell x y')
+      where y' = y + n
+
+
+linesToClear :: Board -> Int
+linesToClear board = length $ takeWhile id [fullRow y | y <- reverse [0..(boardHeight board - 1)]]
+  where fullRow y = and [isOccupied board x y | x <- boardXs board]
+
+
+data GameState = GameState { gsBoard :: Board
+                           , gsScore :: Int
+                           , gsLinesClearedLastMove
+                           , gsCommandHistory :: [Command]
+                           , gsUpcomingUnits :: [Unit]
+                           }
+
 
 
 ------------------------------------------------------------------------------
