@@ -1,8 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import           AI
 import           Control.Applicative ((<$>))
-import           Control.Exception   (assert)
 import           Data.Maybe          (fromJust)
 import           GamePlay
 import           JSON
@@ -10,16 +9,18 @@ import           System.Environment  (getArgs)
 import           Types
 
 
-alwaysDown _ = Move SW
-
 main :: IO ()
 main = do
   file <- head <$> getArgs
   problem <- fromJust <$> parseProblemFromFile file
-  let gameState = makeGameState problem (head (problemSourceSeeds problem))
-      gameState' = runGame gameState alwaysDown
+  let
+      seed = (head (problemSourceSeeds problem))
+      gameState = makeGameState problem seed
+      gameState' = runGame gameState bestStrategy
+      solution = Solution (problemId problem) seed (map commandChar (gsCommandHistory gameState'))
     in
     do
-      print $ gameOver gameState'
-      print $ gameBoardWithCurrentUnit gameState'
-      print $ gsScore gameState'
+      putStrLn $ encodeSolutions [solution]
+      -- print $ gameOver gameState'
+      -- print $ gameBoardWithCurrentUnit gameState'
+      -- print $ gsScore gameState'

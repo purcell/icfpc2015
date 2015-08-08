@@ -2,14 +2,16 @@
 module JSON
        ( parseProblem
        , parseProblemFromFile
+       , encodeSolutions
        ) where
 
-import           Control.Applicative  ((<$>), (<*>))
-import           Control.Monad        (mzero)
-import           Data.Aeson           (FromJSON, decode, parseJSON, (.:))
-import qualified Data.Aeson.Types     as AT
-import           Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Lazy as BSL
+import           Control.Applicative        ((<$>), (<*>))
+import           Control.Monad              (mzero)
+import           Data.Aeson                 (FromJSON, ToJSON, decode, encode,
+                                             object, parseJSON, (.:), (.=))
+import qualified Data.Aeson.Types           as AT
+import           Data.ByteString.Lazy       (ByteString)
+import qualified Data.ByteString.Lazy.Char8 as BSL
 import           Types
 
 
@@ -40,3 +42,18 @@ parseProblem = decode
 
 parseProblemFromFile :: FilePath -> IO (Maybe Problem)
 parseProblemFromFile file = parseProblem <$> BSL.readFile file
+
+
+
+------------------------------------------------------------------------------
+-- Dump solution to JSON
+------------------------------------------------------------------------------
+
+instance ToJSON Solution where
+  toJSON (Solution pid seed commands) = object [ "problemId" .= pid
+                                              , "seed" .= seed
+                                              , "solution" .= commands
+                                              ]
+
+encodeSolutions :: [Solution] -> String
+encodeSolutions solutions = BSL.unpack $ encode solutions
