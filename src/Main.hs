@@ -10,12 +10,14 @@ import           System.Environment  (getArgs)
 import           Types
 
 
+alwaysDown _ = Move SW
+
 main :: IO ()
 main = do
   file <- head <$> getArgs
   problem <- fromJust <$> parseProblemFromFile file
-  let gameState' = foldl playCommand gameState [Move SW, Move SW, Move SW, Move SW, Move SW, Move SE] -- [Move SE, Move SE, Move SW, Move SW, Move SW, Move SE, Turn AntiClockwise]
-      gameState = makeGameState problem (head (problemSourceSeeds problem))
+  let gameState = makeGameState problem (head (problemSourceSeeds problem))
+      gameState' = runGame gameState alwaysDown
     in
     do
       print $ gameOver gameState'

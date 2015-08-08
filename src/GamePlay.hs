@@ -2,6 +2,7 @@ module GamePlay
        --(createGame)
        where
 
+import           Data.List     (find)
 import           Data.Maybe    (listToMaybe, mapMaybe)
 import           Random        (getContestGen)
 import           Rotation      (rotateAntiClockwiseAround,
@@ -151,4 +152,12 @@ applyRawCommand (Turn AntiClockwise) = unitRotateAntiClockwise
 
 createBoard :: Problem -> Board
 createBoard p = Board (problemWidth p) (problemHeight p) (problemFilled p)
+
+
+runGame :: GameState -> Strategy -> GameState
+runGame gs strategy = head $ filter gameOver steps
+  where
+    steps = iterate stepState gs
+    stepState s = playCommand s (strategy s)
+
 
