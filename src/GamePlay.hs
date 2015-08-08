@@ -2,7 +2,6 @@ module GamePlay
        --(createGame)
        where
 
-import           Data.List     (find)
 import           Data.Maybe    (listToMaybe, mapMaybe)
 import           Random        (getContestGen)
 import           Rotation      (rotateAntiClockwiseAround,
@@ -53,17 +52,20 @@ addUnitCellsToBoard board unit = board { boardFilled = boardFilled board ++ unit
 
 
 clearLines :: Board -> (Int, Board)
-clearLines board = (numFullLines, board { boardFilled = movedCells numFullLines })
+clearLines board = (numFullLines, board { boardFilled = updatedBoardCells })
   where
-    numFullLines = linesToClear board
-    movedCells n = mapMaybe (moveCellDown n) (boardFilled board)
-    moveCellDown n (Cell x y) = if y' > (boardHeight board - 1) then Nothing
-                                else Just (Cell x y')
-      where y' = y + n
+    toClear = linesToClear board
+    numFullLines = length toClear
+    updatedBoardCells = foldl removeRow (boardFilled board) toClear
+    removeRow oldCells row = mapMaybe (removeOrMoveCell row) oldCells
+    removeOrMoveCell :: Int -> Cell -> Maybe Cell
+    removeOrMoveCell row (Cell _ y) | y == row = Nothing
+    removeOrMoveCell row (Cell x y) | y < row  = Just (Cell x (y + 1))
+    removeOrMoveCell _    cell                 = Just cell
 
 
-linesToClear :: Board -> Int
-linesToClear board = length $ takeWhile id [fullRow y | y <- reverse [0..(boardHeight board - 1)]]
+linesToClear :: Board -> [Int]
+linesToClear board = filter fullRow [0..(boardHeight board - 1)]
   where fullRow y = and [isOccupied board x y | x <- boardXs board]
 
 
