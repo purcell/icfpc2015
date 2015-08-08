@@ -2,53 +2,12 @@ module GamePlay
        --(createGame)
        where
 
-import           Data.List     (intercalate)
 import           Data.Maybe    (listToMaybe, mapMaybe)
 import           Random        (getContestGen)
 import           Rotation      (rotateAntiClockwiseAround,
                                 rotateClockwiseAround)
 import           System.Random (randoms)
 import           Types
-
-------------------------------------------------------------------------------
--- Board inspection and manipulation
-------------------------------------------------------------------------------
-
-
-data Board = Board { boardWidth  :: Int
-                   , boardHeight :: Int
-                   , boardFilled :: [Cell]
-                   }
-
-instance Show Board where
-  show board = intercalate "\n" $ map showRow (boardYs board)
-    where showRow y = (if odd y then " " else "") ++ unwords [showCell x y | x <- boardXs board]
-          showCell x y = if isOccupied board x y then "⬢" else "⬡"
-
-
-boardXs :: Board -> [Int]
-boardXs board = [0..(boardWidth board - 1)]
-boardYs :: Board -> [Int]
-boardYs board = [0..(boardHeight board - 1)]
-
-isOccupied :: Board -> Int -> Int -> Bool
-isOccupied board x y = Cell x y `elem` boardFilled board
-
-isValidPosition :: Board -> Int -> Int -> Bool
-isValidPosition board x y = 0 <= x && x < (boardWidth board) &&
-                            0 <= y && y < (boardHeight board) &&
-                            not (isOccupied board x y)
-
-------------------------------------------------------------------------------
--- Overall game state
-------------------------------------------------------------------------------
-
-data Game = Game { gameBoard :: Board }
-
-instance Show Game where
-  show = show . gameBoard
-
-
 
 ------------------------------------------------------------------------------
 -- Units
@@ -70,11 +29,8 @@ spawnUnit board (Unit cells pivot) = Unit { unitMembers = map offsetCell cells
 applyOffsets :: Int -> Int -> Cell -> Cell
 applyOffsets x y (Cell cx cy) = Cell (x + cx) (y + cy)
 
-
-
-
 isValidUnitPosition :: Board -> Unit -> Bool
-isValidUnitPosition board unit = all (\(Cell x y) -> isValidPosition board x y) (unitMembers unit)
+isValidUnitPosition board unit = all (\(Cell x y) -> isEmptyPosition board x y) (unitMembers unit)
 
 unitRotateClockwise :: Unit -> Unit
 unitRotateClockwise (Unit cells pivot) = Unit (rotateClockwiseAround pivot cells) pivot
@@ -91,11 +47,8 @@ unitTranslate f (Unit cells pivot) = Unit (map f cells) (f pivot)
 -- Updating the board and tracking scores
 ------------------------------------------------------------------------------
 
-data ScoringFactors = ScoringFactors { sfUnit :: Unit, sfLinesCleared :: Int }
-
 addUnitCellsToBoard :: Board -> Unit -> Board
 addUnitCellsToBoard board unit = board { boardFilled = boardFilled board ++ unitMembers unit }
-
 
 
 clearLines :: Board -> (Int, Board)
@@ -111,15 +64,6 @@ clearLines board = (numFullLines, board { boardFilled = movedCells numFullLines 
 linesToClear :: Board -> Int
 linesToClear board = length $ takeWhile id [fullRow y | y <- reverse [0..(boardHeight board - 1)]]
   where fullRow y = and [isOccupied board x y | x <- boardXs board]
-
-
-data GameState = GameState { gsCurrentUnit          :: Maybe Unit
-                           , gsBoard                :: Board
-                           , gsScore                :: Int
-                           , gsLinesClearedLastMove :: Int
-                           , gsCommandHistory       :: [Command]
-                           , gsUpcomingUnits        :: [Unit]
-                           } deriving Show
 
 
 -- TODO: prevent repeating previously-seen positions
@@ -158,9 +102,6 @@ gameOver gs = case gsCurrentUnit gs of
   Nothing -> True
   Just unit -> not (isValidUnitPosition (gsBoard gs) unit)
 
--- playGame :: GameState -> (GameState -> Command) -> GameState
--- playGame gs strategy = steps
---   where steps = takeWhile (not gameOver) $ iterate
 
 makeGameState :: Problem -> Int -> GameState
 makeGameState problem seed = GameState (listToMaybe units) board 0 0 [] (tail units)
@@ -180,15 +121,6 @@ gameBoardWithCurrentUnit gs =
 ------------------------------------------------------------------------------
 -- Commands
 ------------------------------------------------------------------------------
-
-data MoveDirection = E | W | SE | SW
-                   deriving Show
-data TurnDirection = Clockwise | AntiClockwise
-                   deriving Show
-
-data Command = Move MoveDirection
-             | Turn TurnDirection
-             deriving Show
 
 commandChar :: Command -> Char
 commandChar (Move E) = 'b'
@@ -219,9 +151,4 @@ applyRawCommand (Turn AntiClockwise) = unitRotateAntiClockwise
 
 createBoard :: Problem -> Board
 createBoard p = Board (problemWidth p) (problemHeight p) (problemFilled p)
-
-
-createGame :: Problem -> Game
-createGame p = Game (createBoard p)
-
 
