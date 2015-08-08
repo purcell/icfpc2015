@@ -42,35 +42,28 @@ instance Show Game where
   show = show . gameBoard
 
 
-data PlacedUnit = PlacedUnit { puUnit     :: Unit
-                             , puOffsetX  :: Int
-                             , puOffsetY  :: Int
-                             , puRotation :: Int } deriving Show
-
-placedUnitCells :: PlacedUnit -> [Cell]
-placedUnitCells pUnit | puRotation pUnit == 0 = map applyOffset $ unitMembers $ puUnit pUnit
-  where applyOffset (Cell x y) = Cell { cellX = x + puOffsetX pUnit, cellY = y + puOffsetY pUnit}
-placedUnitCells _ = error "rotation not yet handled"
-
-spawnUnit :: Board -> Unit -> PlacedUnit
-spawnUnit board unit = PlacedUnit { puUnit = unit
-                                  , puOffsetX = initialOffsetX
-                                  , puOffsetY = initialOffsetY
-                                  , puRotation = 0 }
-  where initialOffsetY = negate unitMinY
+spawnUnit :: Board -> Unit -> Unit
+spawnUnit board (Unit cells pivot) = Unit { unitMembers = map offsetCell cells
+                                          , unitPivot = offsetCell pivot
+                                          }
+  where offsetCell = applyOffsets initialOffsetX initialOffsetY
+        initialOffsetY = negate unitMinY
         initialOffsetX = (boardWidth board - (1 + unitMaxX - unitMinX)) `div` 2 - unitMinX
-        unitMinY = minimum $ map cellY originalCells
+        unitMinY = minimum $ map cellY cells
         unitMinX = minimum unitCellXs
         unitMaxX = maximum unitCellXs
-        originalCells = unitMembers unit
-        unitCellXs = map cellX originalCells
+        unitCellXs = map cellX cells
 
-lockUnit :: Board -> PlacedUnit -> Board
-lockUnit board placedUnit = board { boardFilled = (boardFilled board) ++ placedUnitCells placedUnit }
+applyOffsets :: Int -> Int -> Cell -> Cell
+applyOffsets x y (Cell cx cy) = Cell (x + cx) (y + cy)
+
+lockUnit :: Board -> Unit -> Board
+lockUnit board unit = board { boardFilled = (boardFilled board) ++ unitMembers unit }
+
+isValidUnitPosition :: Board -> Unit -> Bool
+isValidUnitPosition board plUnit = all (\(Cell x y) -> isValidPosition board x y) (unitMembers plUnit)
 
 
-isValidUnitPosition :: Board -> PlacedUnit -> Bool
-isValidUnitPosition board plUnit = all (\(Cell x y) -> isValidPosition board x y) (placedUnitCells plUnit)
 
 
 ------------------------------------------------------------------------------
