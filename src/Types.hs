@@ -5,7 +5,7 @@ module Types where
 ------------------------------------------------------------------------------
 
 data Unit = Unit { unitMembers :: [Cell]
-                 , pivot       :: Cell
+                 , unitPivot   :: Cell
                  } deriving Show
 
 data Cell = Cell { cellX :: Int
