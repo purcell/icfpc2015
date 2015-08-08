@@ -1,0 +1,8 @@
+#!/bin/sh
+
+here=$(dirname "$0")
+
+for f in $here/problems/*.json; do
+    echo "$f"
+    ./play_icfp2015 -f "$f" > "$here/solutions/$(basename "$f")"
+done

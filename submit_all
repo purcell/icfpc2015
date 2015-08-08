@@ -1,0 +1,14 @@
+#!/bin/sh -e
+
+here=$(dirname "$0")
+
+API_TOKEN="xdqDlUKWH7CMOGI/fXZMFW+LFNWHWzN5jNAO3lTJDvM="
+TEAM_ID=274
+
+for f in $here/solutions/*.json; do
+    echo "Submitting $f"
+    curl --user :$API_TOKEN -X POST -H "Content-Type: application/json" \
+         -d $(cat "$f") \
+         https://davar.icfpcontest.org/teams/$TEAM_ID/solutions
+    echo
+done
