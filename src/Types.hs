@@ -8,16 +8,18 @@ data Unit = Unit { unitMembers :: [Cell]
                  , pivot       :: Cell
                  } deriving Show
 
-data Cell = Cell { cellX :: Integer
-                 , cellY :: Integer
-                 } deriving Show
+data Cell = Cell { cellX :: Int
+                 , cellY :: Int
+                 } deriving (Show, Eq)
 
 
-data Problem = Problem { problemId           :: Integer
+data Problem = Problem { problemId           :: Int
                        , problemUnits        :: [Unit]
-                       , problemWidth        :: Integer
-                       , problemHeight       :: Integer
+                       , problemWidth        :: Int
+                       , problemHeight       :: Int
                        , problemFilled       :: [Cell]
-                       , problemSourceLength :: Integer
-                       , problemSourceSeeds  :: [Integer]
+                       , problemSourceLength :: Int
+                       , problemSourceSeeds  :: [Int]
                        } deriving Show
+
+
