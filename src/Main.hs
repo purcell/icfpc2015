@@ -9,18 +9,20 @@ import           System.Environment  (getArgs)
 import           Types
 
 
+runSolution :: Problem -> Int -> IO Solution
+runSolution problem seed = return $ Solution (problemId problem) seed (map commandChar (gsCommandHistory gameState'))
+  where
+       gameState = makeGameState problem seed
+       gameState' = runGame gameState bestStrategy
+
+-- print $ gameOver gameState'
+-- print $ gameBoardWithCurrentUnit gameState'
+-- print $ gsScore gameState'
+
+
 main :: IO ()
 main = do
   file <- head <$> getArgs
   problem <- fromJust <$> parseProblemFromFile file
-  let
-      seed = (head (problemSourceSeeds problem))
-      gameState = makeGameState problem seed
-      gameState' = runGame gameState bestStrategy
-      solution = Solution (problemId problem) seed (map commandChar (gsCommandHistory gameState'))
-    in
-    do
-      putStrLn $ encodeSolutions [solution]
-      -- print $ gameOver gameState'
-      -- print $ gameBoardWithCurrentUnit gameState'
-      -- print $ gsScore gameState'
+  solutions <- mapM (runSolution problem) (problemSourceSeeds problem)
+  putStrLn $ encodeSolutions solutions
