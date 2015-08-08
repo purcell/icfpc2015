@@ -19,7 +19,7 @@ offsetRToCubeCoord (OffsetRCoord x y) = CubeCoord cubeX (- cubeX - y) y
   where cubeX = x - (y - (y `mod` 2)) `div` 2
 
 cubeToOffsetRCoord :: CubeCoord -> OffsetRCoord
-cubeToOffsetRCoord (CubeCoord x y z) = OffsetRCoord (x + (z - (z `mod` 2)) `div` 2) z
+cubeToOffsetRCoord (CubeCoord x _ z) = OffsetRCoord (x + (z - (z `mod` 2)) `div` 2) z
 
 addOffset :: CubeCoord -> CubeCoord -> CubeCoord
 addOffset (CubeCoord offX offY offZ) (CubeCoord x y z) = CubeCoord (x + offX) (y + offY) (z + offZ)
