@@ -2,6 +2,9 @@ module GamePlay
        --(createGame)
        where
 
+import           Data.Function (on)
+import           Data.List     (sort)
+import qualified Data.List     as L
 import           Data.Maybe    (listToMaybe, mapMaybe)
 import           Random        (getContestGen)
 import           Rotation      (rotateAntiClockwiseAround,
@@ -74,15 +77,20 @@ linesToClear board = filter fullRow [0..(boardHeight board - 1)]
 playCommand :: GameState -> Command -> (CommandResult, GameState)
 playCommand gs _   | gameOver gs = (IllegalCommand, gs)
 playCommand gs cmd =
-  if isValidUnitPosition (gsBoard gs) movedUnit then
-    (UnitMoved,
-     gs { gsCurrentUnit = Just movedUnit
-        , gsCommandHistory = updatedCommands
-        }
-    )
+  if isValidUnitPosition (gsBoard gs) proposedUnit then
+    if any (isSamePosition proposedUnit) previousPositions then
+      (IllegalCommand, gs)
+    else
+     (UnitMoved,
+      gs { gsCurrentUnit = Just proposedUnit
+         , gsCurrentUnitHistory = previousPositions
+         , gsCommandHistory = updatedCommands
+         }
+     )
   else
     (UnitLocked,
      gs { gsCurrentUnit = listToMaybe (gsUpcomingUnits gs)
+        , gsCurrentUnitHistory = []
         , gsUpcomingUnits = tail (gsUpcomingUnits gs)
         , gsCommandHistory = updatedCommands
         , gsBoard = newBoard
@@ -92,7 +100,8 @@ playCommand gs cmd =
     )
   where
     Just currentUnit = gsCurrentUnit gs
-    movedUnit = applyRawCommand cmd currentUnit
+    previousPositions =  currentUnit : gsCurrentUnitHistory gs
+    proposedUnit = applyRawCommand cmd currentUnit
     updatedCommands = gsCommandHistory gs ++ [cmd]
     (linesCleared, newBoard) = clearLines $ addUnitCellsToBoard (gsBoard gs) currentUnit
     newScore = gsScore gs + moveScore
@@ -104,6 +113,9 @@ playCommand gs cmd =
             size = length (unitMembers currentUnit)
 
 
+isSamePosition :: Unit -> Unit -> Bool
+isSamePosition = (==) `on` (sort . unitMembers)
+
 gameOver :: GameState -> Bool
 gameOver gs = case gsCurrentUnit gs of
   Nothing -> True
@@ -111,7 +123,14 @@ gameOver gs = case gsCurrentUnit gs of
 
 
 makeGameState :: Problem -> Int -> GameState
-makeGameState problem seed = GameState (listToMaybe units) board 0 0 [] (tail units)
+makeGameState problem seed = GameState { gsCurrentUnit = listToMaybe units
+                                       , gsCurrentUnitHistory = []
+                                       , gsBoard = board
+                                       , gsScore = 0
+                                       , gsLinesClearedLastMove = 0
+                                       , gsCommandHistory = []
+                                       , gsUpcomingUnits = tail units
+                                       }
   where
     board = createBoard problem
     randomUnitIndices = map (`mod` (length $ problemUnits problem)) $ randoms (getContestGen seed)

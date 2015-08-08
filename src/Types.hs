@@ -7,13 +7,13 @@ import           Data.List (intercalate)
 -- Problem definitions
 ------------------------------------------------------------------------------
 
-data Unit = Unit { unitMembers :: [Cell]
+data Unit = Unit { unitMembers :: [Cell] -- TODO sorted bag
                  , unitPivot   :: Cell
                  } deriving Show
 
 data Cell = Cell { cellX :: Int
                  , cellY :: Int
-                 } deriving (Show, Eq)
+                 } deriving (Show, Eq, Ord)
 
 
 data Problem = Problem { problemId           :: Int
@@ -76,6 +76,7 @@ instance Show Board where
 
 -- The game state an AI sees
 data GameState = GameState { gsCurrentUnit          :: Maybe Unit
+                           , gsCurrentUnitHistory   :: [Unit]
                            , gsBoard                :: Board
                            , gsScore                :: Int
                            , gsLinesClearedLastMove :: Int
