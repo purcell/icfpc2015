@@ -2,9 +2,12 @@ module GamePlay
        --(createGame)
        where
 
-import           Data.List  (intercalate)
-import           Data.Maybe (mapMaybe)
-import           Rotation   (rotateAntiClockwiseAround, rotateClockwiseAround)
+import           Data.List     (intercalate)
+import           Data.Maybe    (listToMaybe, mapMaybe)
+import           Random        (getContestGen)
+import           Rotation      (rotateAntiClockwiseAround,
+                                rotateClockwiseAround)
+import           System.Random (randoms)
 import           Types
 
 ------------------------------------------------------------------------------
@@ -95,11 +98,6 @@ addUnitCellsToBoard board unit = board { boardFilled = boardFilled board ++ unit
 
 
 
-lockUnit :: Board -> Unit -> Board
-lockUnit board unit = newBoard
-  where (linesCleared, newBoard) = clearLines $ addUnitCellsToBoard board unit
-
-
 clearLines :: Board -> (Int, Board)
 clearLines board = (numFullLines, board { boardFilled = movedCells numFullLines })
   where
@@ -115,24 +113,82 @@ linesToClear board = length $ takeWhile id [fullRow y | y <- reverse [0..(boardH
   where fullRow y = and [isOccupied board x y | x <- boardXs board]
 
 
-data GameState = GameState { gsBoard :: Board
-                           , gsScore :: Int
-                           , gsLinesClearedLastMove
-                           , gsCommandHistory :: [Command]
-                           , gsUpcomingUnits :: [Unit]
-                           }
+data GameState = GameState { gsCurrentUnit          :: Maybe Unit
+                           , gsBoard                :: Board
+                           , gsScore                :: Int
+                           , gsLinesClearedLastMove :: Int
+                           , gsCommandHistory       :: [Command]
+                           , gsUpcomingUnits        :: [Unit]
+                           } deriving Show
 
 
+-- TODO: prevent repeating previously-seen positions
+-- An AI can use this function to see what effect its command will have
+playCommand :: GameState -> Command -> GameState
+playCommand gs _   | gameOver gs = gs
+playCommand gs cmd =
+  if isValidUnitPosition (gsBoard gs) movedUnit then
+    gs { gsCurrentUnit = Just movedUnit
+       , gsCommandHistory = updatedCommands
+       }
+  else
+    gs { gsCurrentUnit = listToMaybe (gsUpcomingUnits gs)
+       , gsUpcomingUnits = tail (gsUpcomingUnits gs)
+       , gsCommandHistory = updatedCommands
+       , gsBoard = newBoard
+       , gsScore = newScore
+       , gsLinesClearedLastMove = linesCleared
+       }
+  where
+    Just currentUnit = gsCurrentUnit gs
+    movedUnit = applyRawCommand cmd currentUnit
+    updatedCommands = gsCommandHistory gs ++ [cmd]
+    (linesCleared, newBoard) = clearLines $ addUnitCellsToBoard (gsBoard gs) currentUnit
+    newScore = gsScore gs + moveScore
+      where moveScore = points + lineBonus
+            points = size + 100 * (1 + linesCleared) * linesCleared `div` 2
+            lineBonus = if gsLinesClearedLastMove gs > 1
+                        then (gsLinesClearedLastMove gs - 1) * points `div` 10
+                        else 0
+            size = length (unitMembers currentUnit)
+
+
+gameOver :: GameState -> Bool
+gameOver gs = case gsCurrentUnit gs of
+  Nothing -> True
+  Just unit -> not (isValidUnitPosition (gsBoard gs) unit)
+
+-- playGame :: GameState -> (GameState -> Command) -> GameState
+-- playGame gs strategy = steps
+--   where steps = takeWhile (not gameOver) $ iterate
+
+makeGameState :: Problem -> Int -> GameState
+makeGameState problem seed = GameState (listToMaybe units) board 0 0 [] (tail units)
+  where
+    board = createBoard problem
+    randomUnitIndices = map (`mod` (length $ problemUnits problem)) $ randoms (getContestGen seed)
+    randomUnits = map (problemUnits problem !!) randomUnitIndices
+    units = map (spawnUnit board) $ take (problemSourceLength problem) randomUnits
+
+
+gameBoardWithCurrentUnit :: GameState -> Board
+gameBoardWithCurrentUnit gs =
+  case gsCurrentUnit gs of
+  Nothing -> gsBoard gs
+  Just unit -> addUnitCellsToBoard (gsBoard gs) unit
 
 ------------------------------------------------------------------------------
 -- Commands
 ------------------------------------------------------------------------------
 
 data MoveDirection = E | W | SE | SW
+                   deriving Show
 data TurnDirection = Clockwise | AntiClockwise
+                   deriving Show
 
 data Command = Move MoveDirection
              | Turn TurnDirection
+             deriving Show
 
 commandChar :: Command -> Char
 commandChar (Move E) = 'b'
@@ -146,8 +202,8 @@ commandChar (Turn AntiClockwise) = 'k'
 moveCell :: MoveDirection -> Cell -> Cell
 moveCell E (Cell x y) = Cell (x + 1) y
 moveCell W (Cell x y) = Cell (x - 1) y
-moveCell SE (Cell x y) = Cell (if odd y then x else x - 1) (y + 1)
-moveCell SW (Cell x y) = Cell (if even y then x else x + 1) (y + 1)
+moveCell SW (Cell x y) = Cell (if odd y then x else x - 1) (y + 1)
+moveCell SE (Cell x y) = Cell (if even y then x else x + 1) (y + 1)
 
 
 applyRawCommand :: Command -> Unit -> Unit
@@ -167,7 +223,5 @@ createBoard p = Board (problemWidth p) (problemHeight p) (problemFilled p)
 
 createGame :: Problem -> Game
 createGame p = Game (createBoard p)
-
-
 
 

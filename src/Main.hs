@@ -14,8 +14,10 @@ main :: IO ()
 main = do
   file <- head <$> getArgs
   problem <- fromJust <$> parseProblemFromFile file
-  let board = createBoard problem
-      unit = spawnUnit board (problemUnits problem !! 25)
-      unit' = foldl (flip applyRawCommand) unit [Move E, Move SE, Turn AntiClockwise]
+  let gameState' = foldl playCommand gameState [Move SW, Move SW, Move SW, Move SW, Move SW, Move SE] -- [Move SE, Move SE, Move SW, Move SW, Move SW, Move SE, Turn AntiClockwise]
+      gameState = makeGameState problem (head (problemSourceSeeds problem))
     in
-    print $ lockUnit board unit'
+    do
+      print $ gameOver gameState'
+      print $ gameBoardWithCurrentUnit gameState'
+      print $ gsScore gameState'
