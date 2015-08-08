@@ -45,6 +45,11 @@ instance Show Game where
   show = show . gameBoard
 
 
+
+------------------------------------------------------------------------------
+-- Units
+------------------------------------------------------------------------------
+
 spawnUnit :: Board -> Unit -> Unit
 spawnUnit board (Unit cells pivot) = Unit { unitMembers = map offsetCell cells
                                           , unitPivot = offsetCell pivot
@@ -61,10 +66,10 @@ applyOffsets :: Int -> Int -> Cell -> Cell
 applyOffsets x y (Cell cx cy) = Cell (x + cx) (y + cy)
 
 lockUnit :: Board -> Unit -> Board
-lockUnit board unit = board { boardFilled = (boardFilled board) ++ unitMembers unit }
+lockUnit board unit = board { boardFilled = boardFilled board ++ unitMembers unit }
 
 isValidUnitPosition :: Board -> Unit -> Bool
-isValidUnitPosition board plUnit = all (\(Cell x y) -> isValidPosition board x y) (unitMembers plUnit)
+isValidUnitPosition board unit = all (\(Cell x y) -> isValidPosition board x y) (unitMembers unit)
 
 unitRotateClockwise :: Unit -> Unit
 unitRotateClockwise (Unit cells pivot)= Unit (rotateClockwiseAround pivot cells) pivot
