@@ -1,6 +1,9 @@
-module GamePlay (createGame) where
+module GamePlay
+       --(createGame)
+       where
 
 import           Data.List (intercalate)
+import           Rotation  (rotateAntiClockwiseAround, rotateClockwiseAround)
 import           Types
 
 ------------------------------------------------------------------------------
@@ -63,7 +66,11 @@ lockUnit board unit = board { boardFilled = (boardFilled board) ++ unitMembers u
 isValidUnitPosition :: Board -> Unit -> Bool
 isValidUnitPosition board plUnit = all (\(Cell x y) -> isValidPosition board x y) (unitMembers plUnit)
 
+unitRotateClockwise :: Unit -> Unit
+unitRotateClockwise (Unit cells pivot)= Unit (rotateClockwiseAround pivot cells) pivot
 
+unitRotateAntiClockwise :: Unit -> Unit
+unitRotateAntiClockwise (Unit cells pivot)= Unit (rotateAntiClockwiseAround pivot cells) pivot
 
 
 ------------------------------------------------------------------------------
