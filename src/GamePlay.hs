@@ -62,6 +62,7 @@ spawnUnit board (Unit cells pivot) = Unit { unitMembers = map offsetCell cells
         unitMaxX = maximum unitCellXs
         unitCellXs = map cellX cells
 
+
 applyOffsets :: Int -> Int -> Cell -> Cell
 applyOffsets x y (Cell cx cy) = Cell (x + cx) (y + cy)
 
@@ -76,6 +77,42 @@ unitRotateClockwise (Unit cells pivot)= Unit (rotateClockwiseAround pivot cells)
 
 unitRotateAntiClockwise :: Unit -> Unit
 unitRotateAntiClockwise (Unit cells pivot)= Unit (rotateAntiClockwiseAround pivot cells) pivot
+
+unitTranslate :: (Cell -> Cell) -> Unit -> Unit
+unitTranslate f (Unit cells pivot) = Unit (map f cells) (f pivot)
+
+
+------------------------------------------------------------------------------
+-- Commands
+------------------------------------------------------------------------------
+
+data MoveDirection = E | W | SE | SW
+data TurnDirection = Clockwise | AntiClockwise
+
+data Command = Move MoveDirection
+             | Turn TurnDirection
+
+commandChar :: Command -> Char
+commandChar (Move E) = 'b'
+commandChar (Move W) = 'p'
+commandChar (Move SE) = 'l'
+commandChar (Move SW) = 'a'
+commandChar (Turn Clockwise) = 'd'
+commandChar (Turn AntiClockwise) = 'k'
+
+
+moveCell :: MoveDirection -> Cell -> Cell
+moveCell E (Cell x y) = Cell (x + 1) y
+moveCell W (Cell x y) = Cell (x - 1) y
+moveCell SE (Cell x y) = Cell (if odd y then x else x - 1) (y + 1)
+moveCell SW (Cell x y) = Cell (if even y then x else x + 1) (y + 1)
+
+
+applyRawCommand :: Command -> Unit -> Unit
+applyRawCommand (Move direction) = unitTranslate (moveCell direction)
+applyRawCommand (Turn Clockwise) = unitRotateClockwise
+applyRawCommand (Turn AntiClockwise) = unitRotateAntiClockwise
+
 
 
 ------------------------------------------------------------------------------
