@@ -71,21 +71,25 @@ linesToClear board = filter fullRow [0..(boardHeight board - 1)]
 
 -- TODO: prevent repeating previously-seen positions
 -- An AI can use this function to see what effect its command will have
-playCommand :: GameState -> Command -> GameState
-playCommand gs _   | gameOver gs = gs
+playCommand :: GameState -> Command -> (CommandResult, GameState)
+playCommand gs _   | gameOver gs = (IllegalCommand, gs)
 playCommand gs cmd =
   if isValidUnitPosition (gsBoard gs) movedUnit then
-    gs { gsCurrentUnit = Just movedUnit
-       , gsCommandHistory = updatedCommands
-       }
+    (UnitMoved,
+     gs { gsCurrentUnit = Just movedUnit
+        , gsCommandHistory = updatedCommands
+        }
+    )
   else
-    gs { gsCurrentUnit = listToMaybe (gsUpcomingUnits gs)
-       , gsUpcomingUnits = tail (gsUpcomingUnits gs)
-       , gsCommandHistory = updatedCommands
-       , gsBoard = newBoard
-       , gsScore = newScore
-       , gsLinesClearedLastMove = linesCleared
-       }
+    (UnitLocked,
+     gs { gsCurrentUnit = listToMaybe (gsUpcomingUnits gs)
+        , gsUpcomingUnits = tail (gsUpcomingUnits gs)
+        , gsCommandHistory = updatedCommands
+        , gsBoard = newBoard
+        , gsScore = newScore
+        , gsLinesClearedLastMove = linesCleared
+        }
+    )
   where
     Just currentUnit = gsCurrentUnit gs
     movedUnit = applyRawCommand cmd currentUnit
@@ -160,6 +164,6 @@ runGame :: GameState -> Strategy -> GameState
 runGame gs strategy = head $ filter gameOver steps
   where
     steps = iterate stepState gs
-    stepState s = playCommand s (strategy s)
+    stepState s = snd $ playCommand s (strategy s)
 
 
