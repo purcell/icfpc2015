@@ -87,6 +87,7 @@ data GameState = GameState { gsCurrentUnit          :: Maybe Unit
 data CommandResult = UnitMoved
                    | IllegalCommand
                    | UnitLocked
+                   deriving Show
 
 
 -- What an AI must provide
