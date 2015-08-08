@@ -1,0 +1,21 @@
+#!/bin/sh -e
+
+declare -a problem_files
+declare -a phrases_of_power
+
+while getopts f:t:m:c:p: o
+do case "$o" in
+       f)	problem_files[${#problem_files[@]}]="$OPTARG";;
+       t)	time_limit="$OPTARG";;
+       m)	memory_limit="$OPTARG";;
+       c)	cores_limit="$OPTARG";;
+       p)	phrases_of_power[${#phrases_of_power[@]}]="$OPTARG";;
+       [?])	print >&2 "Usage: $0 [opts]"
+		exit 1;;
+   esac
+done
+shift $((OPTIND - 1))
+
+for problem_file in "${problem_files[@]}"; do
+    dist/build/icfpc2015/icfpc2015 "$problem_file"
+done
