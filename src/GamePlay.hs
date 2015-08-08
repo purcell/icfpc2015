@@ -27,6 +27,11 @@ boardYs board = [0..(boardHeight board - 1)]
 isOccupied :: Board -> Int -> Int -> Bool
 isOccupied board x y = Cell x y `elem` boardFilled board
 
+isValidPosition :: Board -> Int -> Int -> Bool
+isValidPosition board x y = 0 <= x && x < (boardWidth board) &&
+                            0 <= y && y < (boardHeight board) &&
+                            not (isOccupied board x y)
+
 ------------------------------------------------------------------------------
 -- Overall game state
 ------------------------------------------------------------------------------
@@ -62,6 +67,10 @@ spawnUnit board unit = PlacedUnit { puUnit = unit
 
 lockUnit :: Board -> PlacedUnit -> Board
 lockUnit board placedUnit = board { boardFilled = (boardFilled board) ++ placedUnitCells placedUnit }
+
+
+isValidUnitPosition :: Board -> PlacedUnit -> Bool
+isValidUnitPosition board plUnit = all (\(Cell x y) -> isValidPosition board x y) (placedUnitCells plUnit)
 
 
 ------------------------------------------------------------------------------
