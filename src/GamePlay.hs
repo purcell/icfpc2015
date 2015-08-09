@@ -5,10 +5,9 @@ module GamePlay
 import           Data.Function (on)
 import           Data.List     (sort)
 import           Data.Maybe    (listToMaybe, mapMaybe)
-import           Random        (getContestGen)
+import           Random        (getContestGen, randomInts)
 import           Rotation      (rotateAntiClockwiseAround,
                                 rotateClockwiseAround)
-import           System.Random (randoms)
 import           Types
 
 ------------------------------------------------------------------------------
@@ -142,7 +141,7 @@ makeGameState problem seed = GameState { gsGameOver = False   -- Assumes problem
                                        }
   where
     board = createBoard problem
-    randomUnitIndices = map (`mod` (length $ problemUnits problem)) $ randoms (getContestGen seed)
+    randomUnitIndices = map (`mod` (length $ problemUnits problem)) $ randomInts (getContestGen seed)
     randomUnits = map (problemUnits problem !!) randomUnitIndices
     units = map (spawnUnit board) $ take (problemSourceLength problem) randomUnits
 

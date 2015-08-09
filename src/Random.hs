@@ -1,4 +1,6 @@
-module Random (getContestGen) where
+module Random ( getContestGen
+              , randomInts
+              ) where
 
 {-
 
@@ -40,6 +42,10 @@ instance RandomGen LinearCongruentialGenerator where
                  num = shiftR (genSeed gen .&. 0x7fff0000) 16
              in (num, gen { genSeed = generated })
   split = undefined
+
+
+randomInts :: RandomGen g => g -> [Int]
+randomInts g = map fst $ tail $ iterate (next . snd) (-1, g)
 
 
 getContestGen :: Int -> LinearCongruentialGenerator
