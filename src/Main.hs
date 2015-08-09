@@ -20,7 +20,7 @@ dumpBoard gs = do
 
 
 commandHistoryAsString :: GameState -> String
-commandHistoryAsString gameState = (map commandChar (gsCommandHistory gameState))
+commandHistoryAsString gameState = map commandChar (gsCommandHistory gameState)
 
 runSolution :: Problem -> Int -> IO Solution
 runSolution problem seed = do
@@ -28,7 +28,7 @@ runSolution problem seed = do
   return $ Solution (problemId problem) seed (commandHistoryAsString gameState')
   where
        gameState = makeGameState problem seed
-       gameState' = runGame gameState bestStrategy
+       gameState' = solver gameState
 
 
 testCommands :: FilePath -> Int -> [Command] -> IO ()

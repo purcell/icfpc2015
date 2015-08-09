@@ -50,6 +50,11 @@ data Command = Move MoveDirection
              | Turn TurnDirection
              deriving Show
 
+movementCommands :: [Command]
+movementCommands = [Move E, Move W, Move SE, Move SW]
+
+allCommands :: [Command]
+allCommands = movementCommands ++ [Turn Clockwise, Turn AntiClockwise]
 
 data Board = Board { boardWidth  :: Int
                    , boardHeight :: Int
@@ -76,6 +81,7 @@ instance Show Board where
 
 -- The game state an AI sees
 data GameState = GameState { gsGameOver             :: Bool
+                           , gsUnitsPlaced          :: Int
                            , gsCurrentUnit          :: Maybe Unit
                            , gsCurrentUnitHistory   :: [Unit]
                            , gsBoard                :: Board
@@ -91,6 +97,3 @@ data CommandResult = UnitMoved
                    | UnitLocked
                    deriving Show
 
-
--- What an AI must provide
-type Strategy = GameState -> Command

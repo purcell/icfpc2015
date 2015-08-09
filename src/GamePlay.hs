@@ -104,6 +104,7 @@ lockAndScoreCurrentUnit :: GameState -> GameState
 lockAndScoreCurrentUnit gs = gs { gsBoard = newBoard
                                 , gsScore = moveScore + gsScore gs
                                 , gsLinesClearedLastMove = linesCleared
+                                , gsUnitsPlaced = gsUnitsPlaced gs + 1
                                 }
   where
     Just currentUnit = gsCurrentUnit gs
@@ -131,6 +132,7 @@ isSamePosition = (==) `on` (sort . unitMembers)
 makeGameState :: Problem -> Int -> GameState
 makeGameState problem seed = GameState { gsGameOver = False   -- Assumes problems are always valid
                                        , gsCurrentUnit = listToMaybe units
+                                       , gsUnitsPlaced = 0
                                        , gsCurrentUnitHistory = []
                                        , gsBoard = board
                                        , gsScore = 0
@@ -184,12 +186,4 @@ applyRawCommand (Turn AntiClockwise) = unitRotateAntiClockwise
 
 createBoard :: Problem -> Board
 createBoard p = Board (problemWidth p) (problemHeight p) (problemFilled p)
-
-
-runGame :: GameState -> Strategy -> GameState
-runGame gs strategy = head $ filter gsGameOver steps
-  where
-    steps = iterate stepState gs
-    stepState s = snd $ playCommand s (strategy s)
-
 
