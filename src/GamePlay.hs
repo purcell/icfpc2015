@@ -78,7 +78,7 @@ playCommand gs _   | gsGameOver gs = (IllegalCommand, gs)
 playCommand gs cmd =
   if isValidUnitPosition (gsBoard gs) proposedUnit then
     if any (isSamePosition proposedUnit) previousPositions then
-      (IllegalCommand, endGame gs)
+      (IllegalCommand, endGame (gs { gsScore = 0 }))
     else
       (UnitMoved,
        (moveToProposedPosition . saveCommand) gs)
