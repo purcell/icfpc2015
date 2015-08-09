@@ -119,10 +119,11 @@ lockAndScoreCurrentUnit gs = gs { gsBoard = newBoard
 
 switchToNextUnit :: GameState -> GameState
 switchToNextUnit gs = case gsUpcomingUnits gs of
-  []     -> endGame gs
-  (u:us) -> gs { gsCurrentUnit = Just u
-               , gsUpcomingUnits = us
-               , gsCurrentUnitHistory = [] }
+  (u:us) | validPosition u -> gs { gsCurrentUnit = Just u
+                                 , gsUpcomingUnits = us
+                                 , gsCurrentUnitHistory = [] }
+  _                        -> endGame gs
+  where validPosition = isValidUnitPosition (gsBoard gs)
 
 isSamePosition :: Unit -> Unit -> Bool
 isSamePosition = (==) `on` (sort . unitMembers)
