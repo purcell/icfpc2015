@@ -102,19 +102,19 @@ endGame gs = gs { gsGameOver = True }
 
 lockAndScoreCurrentUnit :: GameState -> GameState
 lockAndScoreCurrentUnit gs = gs { gsBoard = newBoard
-                                , gsScore = newScore
+                                , gsScore = moveScore + gsScore gs
                                 , gsLinesClearedLastMove = linesCleared
                                 }
   where
     Just currentUnit = gsCurrentUnit gs
     (linesCleared, newBoard) = clearLines $ addUnitCellsToBoard (gsBoard gs) currentUnit
-    newScore = gsScore gs + moveScore
-      where moveScore = points + lineBonus
-            points = size + 100 * (1 + linesCleared) * linesCleared `div` 2
-            lineBonus = if gsLinesClearedLastMove gs > 1
-                        then (gsLinesClearedLastMove gs - 1) * points `div` 10
-                        else 0
-            size = length (unitMembers currentUnit)
+    moveScore = points + lineBonus
+      where
+        points = size + ((100 * (1 + linesCleared) * linesCleared) `div` 2)
+        lineBonus = if gsLinesClearedLastMove gs > 1
+                    then ((gsLinesClearedLastMove gs - 1) * points) `div` 10
+                    else 0
+        size = length (unitMembers currentUnit)
 
 
 switchToNextUnit :: GameState -> GameState
