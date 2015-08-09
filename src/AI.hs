@@ -1,33 +1,56 @@
 module AI where
 
-import           Data.Foldable (maximumBy)
-import           Data.Function (on)
+import           Control.Monad.State.Lazy
+import           Data.Foldable            (maximumBy)
+import           Data.Function            (on)
+import           Data.List                (sort)
+import           Data.Maybe               (fromJust)
+import           Data.Set                 (Set)
+import qualified Data.Set                 as S
 import           Data.Tree
 import           GamePlay
 import           Types
 
 
-stateTreeUntil :: (GameState -> Bool) -> GameState -> Tree GameState
-stateTreeUntil f = unfoldTree (unfoldUntil f)
 
-unfoldUntil :: (GameState -> Bool) -> GameState -> (GameState, [GameState])
-unfoldUntil _ gs | gsGameOver gs = (gs, [])
-unfoldUntil f gs | f gs          = (gs, [])
-unfoldUntil _ gs                 = (gs, map snd $ filter legal possibleResults)
+-- Possible fitness criteria:
+--   maximise turn score
+--   minimise open cells around placed unit
+--   maximise average y of placed unit
+--   doesn't end the game
+--   minimise entropy for the board
+--   least empty cells below
+
+
+
+stateTreeUntil :: (GameState -> Bool) -> GameState -> Tree GameState
+stateTreeUntil f gs = evalState (unfoldTreeM_BF (unfoldUntil f) gs) S.empty
+
+unfoldUntil :: (GameState -> Bool) -> GameState -> State (Set [Cell]) (GameState, [GameState])
+unfoldUntil f gs =
+  do
+    seen <- get
+    if gsGameOver gs || f gs || (thisPosition `S.member` seen)
+    then return (gs, [])
+    else do
+      put (thisPosition `S.insert` seen)
+      return (gs, legalResults)
   where
+    thisPosition = positionFingerprint gs
+    legalResults = map snd $ filter legal possibleResults
     possibleResults = map (playCommand gs) (commandsForUnit $ gsCurrentUnit gs)
     legal (IllegalCommand, _) = False
     legal _ = True
+
+
+positionFingerprint :: GameState -> [Cell]
+positionFingerprint = sort . unitMembers . fromJust . gsCurrentUnit
 
 
 -- Don't try to rotate 1-cell units
 commandsForUnit :: Maybe Unit -> [Command]
 commandsForUnit (Just (Unit [_] _)) = movementCommands
 commandsForUnit _ = allCommands
-
-
-highestScoring :: [GameState] -> GameState
-highestScoring = maximumBy (compare `on` gsScore) -- TODO fitness includes whether game is now over
 
 
 turnFitness :: GameState -> GameState -> Float
