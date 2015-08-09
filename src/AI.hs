@@ -66,7 +66,7 @@ nextMovesUntil f gs = filter f $ walkTree (stateTreeUntil f gs)
 
 
 bestUnitPlacement :: GameState -> GameState
-bestUnitPlacement gs = maximumBy (compare `on` turnFitness gs) $ take 100 $ nextMovesUntil ((unitsSoFar <) . gsUnitsPlaced) gs
+bestUnitPlacement gs = maximumBy (compare `on` turnFitness gs) $ take 1000 $ nextMovesUntil ((unitsSoFar <) . gsUnitsPlaced) gs
   where
     unitsSoFar = gsUnitsPlaced gs
 
