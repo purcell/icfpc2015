@@ -38,19 +38,13 @@ unfoldUntil f gs =
   where
     thisPosition = positionFingerprint gs
     legalResults = map snd $ filter legal possibleResults
-    possibleResults = map (playCommand gs) (commandsForUnit $ gsCurrentUnit gs)
+    possibleResults = map (playCommand gs) allCommands
     legal (IllegalCommand, _) = False
     legal _ = True
 
 
 positionFingerprint :: GameState -> [Cell]
 positionFingerprint = sort . unitMembers . fromJust . gsCurrentUnit
-
-
--- Don't try to rotate 1-cell units
-commandsForUnit :: Maybe Unit -> [Command]
-commandsForUnit (Just (Unit [_] _)) = movementCommands
-commandsForUnit _ = allCommands
 
 
 turnFitness :: GameState -> GameState -> Float
