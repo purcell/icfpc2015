@@ -75,7 +75,8 @@ instance Show Board where
           showCell x y = if isOccupied board x y then "⬢" else "⬡"
 
 -- The game state an AI sees
-data GameState = GameState { gsCurrentUnit          :: Maybe Unit
+data GameState = GameState { gsGameOver             :: Bool
+                           , gsCurrentUnit          :: Maybe Unit
                            , gsCurrentUnitHistory   :: [Unit]
                            , gsBoard                :: Board
                            , gsScore                :: Int

@@ -42,7 +42,7 @@ printCommands gs [] = return ()
 printCommands gs (c:cs) = do
   hPutStrLn stderr "---------------------------------------------------------"
   hPutStrLn stderr $ show c ++ " ==> " ++ show result
-  hPutStrLn stderr $ "Game over: " ++ show (gameOver gs')
+  hPutStrLn stderr $ "Game over: " ++ show (gsGameOver gs')
   hPutStrLn stderr "---------------------------------------------------------"
   dumpBoard gs'
   printCommands gs' cs

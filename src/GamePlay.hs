@@ -4,7 +4,6 @@ module GamePlay
 
 import           Data.Function (on)
 import           Data.List     (sort)
-import qualified Data.List     as L
 import           Data.Maybe    (listToMaybe, mapMaybe)
 import           Random        (getContestGen)
 import           Rotation      (rotateAntiClockwiseAround,
@@ -75,34 +74,38 @@ linesToClear board = filter fullRow [0..(boardHeight board - 1)]
 -- TODO: prevent repeating previously-seen positions
 -- An AI can use this function to see what effect its command will have
 playCommand :: GameState -> Command -> (CommandResult, GameState)
-playCommand gs _   | gameOver gs = (IllegalCommand, gs)
+playCommand gs _   | gsGameOver gs = (IllegalCommand, gs)
 playCommand gs cmd =
   if isValidUnitPosition (gsBoard gs) proposedUnit then
     if any (isSamePosition proposedUnit) previousPositions then
-      (IllegalCommand, gs)
+      (IllegalCommand, endGame gs)
     else
-     (UnitMoved,
-      gs { gsCurrentUnit = Just proposedUnit
-         , gsCurrentUnitHistory = previousPositions
-         , gsCommandHistory = updatedCommands
-         }
-     )
+      (UnitMoved,
+       (moveToProposedPosition . saveCommand) gs)
   else
     (UnitLocked,
-     gs { gsCurrentUnit = listToMaybe (gsUpcomingUnits gs)
-        , gsCurrentUnitHistory = []
-        , gsUpcomingUnits = tail (gsUpcomingUnits gs)
-        , gsCommandHistory = updatedCommands
-        , gsBoard = newBoard
-        , gsScore = newScore
-        , gsLinesClearedLastMove = linesCleared
-        }
-    )
+     (switchToNextUnit . lockAndScoreCurrentUnit . saveCommand) gs)
   where
     Just currentUnit = gsCurrentUnit gs
     previousPositions =  currentUnit : gsCurrentUnitHistory gs
     proposedUnit = applyRawCommand cmd currentUnit
-    updatedCommands = gsCommandHistory gs ++ [cmd]
+    moveToProposedPosition s = s { gsCurrentUnit = Just proposedUnit
+                                 , gsCurrentUnitHistory = previousPositions
+                                 }
+    saveCommand s = s { gsCommandHistory = gsCommandHistory gs ++ [cmd] }
+
+
+
+endGame :: GameState -> GameState
+endGame gs = gs { gsGameOver = True }
+
+lockAndScoreCurrentUnit :: GameState -> GameState
+lockAndScoreCurrentUnit gs = gs { gsBoard = newBoard
+                                , gsScore = newScore
+                                , gsLinesClearedLastMove = linesCleared
+                                }
+  where
+    Just currentUnit = gsCurrentUnit gs
     (linesCleared, newBoard) = clearLines $ addUnitCellsToBoard (gsBoard gs) currentUnit
     newScore = gsScore gs + moveScore
       where moveScore = points + lineBonus
@@ -113,17 +116,19 @@ playCommand gs cmd =
             size = length (unitMembers currentUnit)
 
 
+switchToNextUnit :: GameState -> GameState
+switchToNextUnit gs = case gsUpcomingUnits gs of
+  []     -> endGame gs
+  (u:us) -> gs { gsCurrentUnit = Just u
+               , gsUpcomingUnits = us
+               , gsCurrentUnitHistory = [] }
+
 isSamePosition :: Unit -> Unit -> Bool
 isSamePosition = (==) `on` (sort . unitMembers)
 
-gameOver :: GameState -> Bool
-gameOver gs = case gsCurrentUnit gs of
-  Nothing -> True
-  Just unit -> not (isValidUnitPosition (gsBoard gs) unit)
-
-
 makeGameState :: Problem -> Int -> GameState
-makeGameState problem seed = GameState { gsCurrentUnit = listToMaybe units
+makeGameState problem seed = GameState { gsGameOver = False   -- Assumes problems are always valid
+                                       , gsCurrentUnit = listToMaybe units
                                        , gsCurrentUnitHistory = []
                                        , gsBoard = board
                                        , gsScore = 0
@@ -180,7 +185,7 @@ createBoard p = Board (problemWidth p) (problemHeight p) (problemFilled p)
 
 
 runGame :: GameState -> Strategy -> GameState
-runGame gs strategy = head $ filter gameOver steps
+runGame gs strategy = head $ filter gsGameOver steps
   where
     steps = iterate stepState gs
     stepState s = snd $ playCommand s (strategy s)
