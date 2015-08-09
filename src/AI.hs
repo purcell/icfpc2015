@@ -54,9 +54,11 @@ commandsForUnit _ = allCommands
 
 
 turnFitness :: GameState -> GameState -> Float
-turnFitness initial final = turnScore * heavinessScore
+turnFitness initial final = turnScore + heavinessScore - gameOverPenalty
   where turnScore = fromIntegral $ gsScore final - gsScore initial
-        heavinessScore = averageCellY final - averageCellY initial
+        heavinessScore = averageCellY final
+        gameOverPenalty = if gsGameOver final then 1000
+                          else 0
 
 
 averageCellY :: GameState -> Float
