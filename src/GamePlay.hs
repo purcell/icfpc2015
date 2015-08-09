@@ -156,12 +156,12 @@ gameBoardWithCurrentUnit gs =
 ------------------------------------------------------------------------------
 
 commandChar :: Command -> Char
-commandChar (Move E) = 'b'
-commandChar (Move W) = 'p'
-commandChar (Move SE) = 'l'
-commandChar (Move SW) = 'a'
-commandChar (Turn Clockwise) = 'd'
-commandChar (Turn AntiClockwise) = 'k'
+commandChar (Move E)             = 'e' -- {b, c, e, f, y, 2}
+commandChar (Move W)             = '!' -- {p, ', !, ., 0, 3}
+commandChar (Move SE)            = 'l' -- {l, m, n, o, space, 5}
+commandChar (Move SW)            = 'i' -- {a, g, h, i, j, 4}
+commandChar (Turn Clockwise)     = 'd' -- {d, q, r, v, z, 1}
+commandChar (Turn AntiClockwise) = 'k' -- {k, s, t, u, w, x}
 
 
 moveCell :: MoveDirection -> Cell -> Cell
