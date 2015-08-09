@@ -4,6 +4,6 @@ here=$(dirname "$0")
 
 for f in $here/problems/*.json; do
     echo "$f"
-    tmp=`mktemp icfp2015`
+    tmp=`mktemp -t icfp2015`
     ./play_icfp2015 -f "$f" > "$tmp" && mv "$tmp" "$here/solutions/$(basename "$f")"
 done
