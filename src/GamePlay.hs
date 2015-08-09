@@ -91,6 +91,7 @@ playCommand gs cmd =
     proposedUnit = applyRawCommand cmd currentUnit
     moveToProposedPosition s = s { gsCurrentUnit = Just proposedUnit
                                  , gsCurrentUnitHistory = previousPositions
+                                 , gsLinesClearedLastMove = 0
                                  }
     saveCommand s = s { gsCommandHistory = gsCommandHistory gs ++ [cmd] }
 
