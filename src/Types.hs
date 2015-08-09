@@ -65,8 +65,8 @@ isOccupied :: Board -> Int -> Int -> Bool
 isOccupied board x y = Cell x y `elem` boardFilled board
 
 isEmptyPosition :: Board -> Int -> Int -> Bool
-isEmptyPosition board x y = 0 <= x && x < (boardWidth board) &&
-                            0 <= y && y < (boardHeight board) &&
+isEmptyPosition board x y = 0 <= x && x < boardWidth board &&
+                            0 <= y && y < boardHeight board &&
                             not (isOccupied board x y)
 
 instance Show Board where
