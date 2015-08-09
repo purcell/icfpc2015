@@ -21,6 +21,20 @@ import           Types
 --   minimise entropy for the board
 --   least empty cells below
 
+turnFitness :: GameState -> GameState -> Float
+turnFitness initial final = turnScore + heavinessScore - gameOverPenalty
+  where turnScore = fromIntegral $ gsScore final - gsScore initial
+        heavinessScore = averageCellY final
+        gameOverPenalty = if gsGameOver final then 1000
+                          else 0
+
+
+averageCellY :: GameState -> Float
+averageCellY = average . map cellY . boardFilled . gsBoard
+  where
+    average xs = fromIntegral (sum xs) / fromIntegral (length xs)
+
+
 
 
 stateTreeUntil :: (GameState -> Bool) -> GameState -> Tree GameState
@@ -45,20 +59,6 @@ unfoldUntil f gs =
 
 positionFingerprint :: GameState -> [Cell]
 positionFingerprint = sort . unitMembers . fromJust . gsCurrentUnit
-
-
-turnFitness :: GameState -> GameState -> Float
-turnFitness initial final = turnScore + heavinessScore - gameOverPenalty
-  where turnScore = fromIntegral $ gsScore final - gsScore initial
-        heavinessScore = averageCellY final
-        gameOverPenalty = if gsGameOver final then 1000
-                          else 0
-
-
-averageCellY :: GameState -> Float
-averageCellY = average . map cellY . boardFilled . gsBoard
-  where
-    average xs = fromIntegral (sum xs) / fromIntegral (length xs)
 
 
 nextMovesUntil :: (GameState -> Bool) -> GameState -> [GameState]
