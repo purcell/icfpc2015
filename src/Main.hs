@@ -24,6 +24,9 @@ commandHistoryAsString gameState = map commandChar (gsCommandHistory gameState)
 
 runSolution :: Problem -> Int -> IO Solution
 runSolution problem seed = do
+  hPutStrLn stderr "========================================================="
+  hPutStrLn stderr $ "Problem " ++ show(problemId problem) ++ ", seed " ++ show seed
+  hPutStrLn stderr "========================================================="
   dumpBoard gameState'
   return $ Solution (problemId problem) seed (commandHistoryAsString gameState')
   where
