@@ -12,13 +12,20 @@ import           Types
 
 
 dumpBoard :: GameState -> IO ()
-dumpBoard gs = hPrint stderr $ gameBoardWithCurrentUnit gs
+dumpBoard gs = do
+  hPrint stderr $ gameBoardWithCurrentUnit gs
+  hPutStrLn stderr $ "Game over: " ++ show (gsGameOver gs)
+  hPutStrLn stderr $ "Score    : " ++ show (gsScore gs)
+  -- hPutStrLn stderr $ "Commands : " ++ commandHistoryAsString gs
 
+
+commandHistoryAsString :: GameState -> String
+commandHistoryAsString gameState = (map commandChar (gsCommandHistory gameState))
 
 runSolution :: Problem -> Int -> IO Solution
 runSolution problem seed = do
   dumpBoard gameState'
-  return $ Solution (problemId problem) seed (map commandChar (gsCommandHistory gameState'))
+  return $ Solution (problemId problem) seed (commandHistoryAsString gameState')
   where
        gameState = makeGameState problem seed
        gameState' = runGame gameState bestStrategy
@@ -42,7 +49,6 @@ printCommands gs [] = return ()
 printCommands gs (c:cs) = do
   hPutStrLn stderr "---------------------------------------------------------"
   hPutStrLn stderr $ show c ++ " ==> " ++ show result
-  hPutStrLn stderr $ "Game over: " ++ show (gsGameOver gs')
   hPutStrLn stderr "---------------------------------------------------------"
   dumpBoard gs'
   printCommands gs' cs
