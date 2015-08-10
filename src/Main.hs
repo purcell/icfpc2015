@@ -5,6 +5,7 @@ import           Control.Applicative ((<$>))
 import           Data.Maybe          (fromJust)
 import           GamePlay
 import           JSON
+import           System.Cmd          (system)
 import           System.Environment  (getArgs)
 import           System.IO           (hPrint, hPutStrLn, stderr)
 import           Types
@@ -28,6 +29,9 @@ runSolution problem seed = do
   hPutStrLn stderr $ "Problem " ++ show(problemId problem) ++ ", seed " ++ show seed
   hPutStrLn stderr "========================================================="
   dumpBoard gameState'
+  -- printCommands gameState (gsCommandHistory gameState')
+  hPutStrLn stderr "---------------------------------------------------------"
+  --dumpBoard gameState'
   return $ Solution (problemId problem) seed (commandHistoryAsString gameState')
   where
        gameState = makeGameState problem seed
@@ -50,6 +54,7 @@ testCommands file seed commands = do
 printCommands :: GameState -> [Command] -> IO ()
 printCommands gs [] = return ()
 printCommands gs (c:cs) = do
+  -- system "clear"
   hPutStrLn stderr "---------------------------------------------------------"
   hPutStrLn stderr $ show c ++ " ==> " ++ show result
   hPutStrLn stderr "---------------------------------------------------------"

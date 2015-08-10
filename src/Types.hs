@@ -13,7 +13,10 @@ data Unit = Unit { unitMembers :: [Cell] -- TODO sorted bag
 
 data Cell = Cell { cellX :: Int
                  , cellY :: Int
-                 } deriving (Show, Eq, Ord)
+                 } deriving (Show, Eq)
+
+instance Ord Cell where
+  compare c1 c2 = compare (cellY c1, cellX c1) (cellY c2, cellX c2)
 
 
 data Problem = Problem { problemId           :: Int
@@ -69,10 +72,19 @@ boardYs board = [0..(boardHeight board - 1)]
 isOccupied :: Board -> Int -> Int -> Bool
 isOccupied board x y = Cell x y `elem` boardFilled board
 
-isEmptyPosition :: Board -> Int -> Int -> Bool
-isEmptyPosition board x y = 0 <= x && x < boardWidth board &&
-                            0 <= y && y < boardHeight board &&
+isEmptyPosition :: Board -> Int -> Int -> Bool  -- TODO: just use Cell, not Int -> Int
+isEmptyPosition board x y = isOnBoard board (Cell x y) &&
                             not (isOccupied board x y)
+
+isOnBoard :: Board -> Cell -> Bool
+isOnBoard board (Cell x y) = 0 <= x && x < boardWidth board &&
+                             0 <= y && y < boardHeight board
+
+surroundingCells :: Cell -> [Cell]
+surroundingCells (Cell x y) = aboveAndBelow ++ [Cell (x-1) y, Cell (x+1) y]
+  where
+    offset = if odd y then 0 else -1
+    aboveAndBelow = [Cell (x' + offset) y' | x' <- [x, x + 1], y' <- [y - 1, y + 1]]
 
 instance Show Board where
   show board = intercalate "\n" $ map showRow (boardYs board)
