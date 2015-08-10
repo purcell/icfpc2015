@@ -25,3 +25,7 @@ wonderful - if exhausting - experience.
 -Steve Purcell
 
 [@sanityinc](https://twitter.com/sanityinc) // [sanityinc.com](http://www.sanityinc.com)
+
+Get in touch if you'd like to work with me at
+[powershop.co.nz](http://www.powershop.co.nz/) -- we're hiring
+excellent developers.
