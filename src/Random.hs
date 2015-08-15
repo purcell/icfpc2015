@@ -30,7 +30,7 @@ standardParams = GeneratorParams 4294967296 1103515245 12345
 
 
 nextSeed :: GeneratorParams -> Int -> Int
-nextSeed params prev = ((gpMultiplier params) * prev + (gpIncrement params)) `mod` (gpModulus params)
+nextSeed params prev = gpMultiplier params * prev + gpIncrement params `mod` gpModulus params
 
 
 data LinearCongruentialGenerator = LinearCongruentialGenerator { genSeed   :: Int
