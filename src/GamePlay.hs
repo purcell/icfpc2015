@@ -2,12 +2,10 @@ module GamePlay
        --(createGame)
        where
 
-import           Data.Function (on)
-import           Data.List     (sort)
-import           Data.Maybe    (listToMaybe, mapMaybe)
-import           Random        (getContestGen, randomInts)
-import           Rotation      (rotateAntiClockwiseAround,
-                                rotateClockwiseAround)
+import           Data.Maybe (mapMaybe)
+import qualified Data.Set   as S
+import           Random     (getContestGen, randomInts)
+import           Rotation   (rotateAntiClockwiseAround, rotateClockwiseAround)
 import           Types
 
 ------------------------------------------------------------------------------
@@ -49,7 +47,7 @@ unitTranslate f (Unit cells pivot) = Unit (map f cells) (f pivot)
 ------------------------------------------------------------------------------
 
 addUnitCellsToBoard :: Board -> Unit -> Board
-addUnitCellsToBoard board unit = board { boardFilled = boardFilled board ++ unitMembers unit }
+addUnitCellsToBoard board unit = board { boardFilled = boardFilled board `S.union` S.fromList (unitMembers unit) }
 
 
 clearLines :: Board -> (Int, Board)
@@ -57,7 +55,7 @@ clearLines board = (numFullLines, board { boardFilled = updatedBoardCells })
   where
     toClear = rowsToClear board
     numFullLines = length toClear
-    updatedBoardCells = foldl removeRow (boardFilled board) toClear
+    updatedBoardCells = S.fromList $ foldl removeRow (S.toList (boardFilled board)) toClear
     removeRow oldCells row = mapMaybe (removeOrMoveCell row) oldCells
     removeOrMoveCell :: Int -> Cell -> Maybe Cell
     removeOrMoveCell row (Cell _ y) | y == row = Nothing
@@ -75,7 +73,7 @@ playCommand :: GameState -> Command -> (CommandResult, GameState)
 playCommand gs _   | gsGameOver gs = (IllegalCommand, gs)
 playCommand gs cmd =
   if isValidUnitPosition (gsBoard gs) proposedUnit then
-    if any (isSamePosition proposedUnit) previousPositions then
+    if proposedUnitPosition `S.member` gsCurrentUnitHistory gs then
       (IllegalCommand, endGame (gs { gsScore = 0 }))
     else
       (UnitMoved,
@@ -85,10 +83,10 @@ playCommand gs cmd =
      (switchToNextUnit . lockAndScoreCurrentUnit . saveCommand) gs)
   where
     Just currentUnit = gsCurrentUnit gs
-    previousPositions =  currentUnit : gsCurrentUnitHistory gs
     proposedUnit = applyRawCommand cmd currentUnit
+    proposedUnitPosition = unitPosition proposedUnit
     moveToProposedPosition s = s { gsCurrentUnit = Just proposedUnit
-                                 , gsCurrentUnitHistory = previousPositions
+                                 , gsCurrentUnitHistory = S.insert proposedUnitPosition (gsCurrentUnitHistory s)
                                  , gsLinesClearedLastMove = 0
                                  }
     saveCommand s = s { gsCommandHistory = gsCommandHistory gs ++ [cmd] }
@@ -119,23 +117,21 @@ switchToNextUnit :: GameState -> GameState
 switchToNextUnit gs = case gsUpcomingUnits gs of
   (u:us) | validPosition u -> gs { gsCurrentUnit = Just u
                                  , gsUpcomingUnits = us
-                                 , gsCurrentUnitHistory = [] }
+                                 , gsCurrentUnitHistory = S.singleton (unitPosition u) }
   _                        -> endGame gs
   where validPosition = isValidUnitPosition (gsBoard gs)
 
-isSamePosition :: Unit -> Unit -> Bool
-isSamePosition = (==) `on` (sort . unitMembers)
-
 makeGameState :: Problem -> Int -> GameState
-makeGameState problem seed = GameState { gsGameOver = False   -- Assumes problems are always valid
-                                       , gsCurrentUnit = listToMaybe units
+makeGameState problem seed = switchToNextUnit
+                             GameState { gsGameOver = False
+                                       , gsCurrentUnit = Nothing
                                        , gsUnitsPlaced = 0
-                                       , gsCurrentUnitHistory = []
+                                       , gsCurrentUnitHistory = S.empty
                                        , gsBoard = board
                                        , gsScore = 0
                                        , gsLinesClearedLastMove = 0
                                        , gsCommandHistory = []
-                                       , gsUpcomingUnits = tail units
+                                       , gsUpcomingUnits = units
                                        }
   where
     board = createBoard problem
@@ -144,7 +140,7 @@ makeGameState problem seed = GameState { gsGameOver = False   -- Assumes problem
     units = map (spawnUnit board) $ take (problemSourceLength problem) randomUnits
 
 createBoard :: Problem -> Board
-createBoard p = Board (problemWidth p) (problemHeight p) (problemFilled p)
+createBoard p = Board (problemWidth p) (problemHeight p) (S.fromList (problemFilled p))
 
 gameBoardWithCurrentUnit :: GameState -> Board
 gameBoardWithCurrentUnit gs =

@@ -1,9 +1,8 @@
 module AI where
 
 import           Control.Monad.State.Lazy
-import           Data.Foldable            (maximumBy)
+import           Data.Foldable            (Foldable (..), maximumBy)
 import           Data.Function            (on)
-import           Data.List                (sort)
 import           Data.Maybe               (fromJust)
 import           Data.Set                 (Set)
 import qualified Data.Set                 as S
@@ -30,17 +29,15 @@ turnFitness initial final = turnScore + heavinessScore - gameOverPenalty
 
 
 averageCellY :: GameState -> Float
-averageCellY = average . map cellY . boardFilled . gsBoard
+averageCellY = average . fmap cellY . S.toList . boardFilled . gsBoard
   where
     average xs = fromIntegral (sum xs) / fromIntegral (length xs)
-
-
 
 
 stateTreeUntil :: (GameState -> Bool) -> GameState -> Tree GameState
 stateTreeUntil f gs = evalState (unfoldTreeM_BF (unfoldUntil f) gs) S.empty
 
-unfoldUntil :: (GameState -> Bool) -> GameState -> State (Set [Cell]) (GameState, [GameState])
+unfoldUntil :: (GameState -> Bool) -> GameState -> State (Set UnitPosition) (GameState, [GameState])
 unfoldUntil f gs =
   do
     seen <- get
@@ -57,8 +54,8 @@ unfoldUntil f gs =
     legal _ = True
 
 
-positionFingerprint :: GameState -> [Cell]
-positionFingerprint = sort . unitMembers . fromJust . gsCurrentUnit
+positionFingerprint :: GameState -> UnitPosition
+positionFingerprint = unitPosition . fromJust . gsCurrentUnit
 
 
 nextMovesUntil :: (GameState -> Bool) -> GameState -> [GameState]

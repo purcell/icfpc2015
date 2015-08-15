@@ -1,6 +1,8 @@
 module Types where
 
-import           Data.List (intercalate)
+import           Data.List (intercalate, sort)
+import           Data.Set  (Set)
+import qualified Data.Set  as S
 
 
 ------------------------------------------------------------------------------
@@ -57,7 +59,7 @@ allCommands = movementCommands ++ [Turn Clockwise, Turn AntiClockwise]
 
 data Board = Board { boardWidth  :: Int
                    , boardHeight :: Int
-                   , boardFilled :: [Cell]
+                   , boardFilled :: Set Cell
                    }
 
 boardXs :: Board -> [Int]
@@ -65,8 +67,14 @@ boardXs board = [0..(boardWidth board - 1)]
 boardYs :: Board -> [Int]
 boardYs board = [0..(boardHeight board - 1)]
 
+newtype UnitPosition = UnitPosition { positionCells :: [Cell] }
+                     deriving (Show, Eq, Ord)
+
+unitPosition :: Unit -> UnitPosition
+unitPosition = UnitPosition . sort . unitMembers
+
 isOccupied :: Board -> Cell -> Bool
-isOccupied board c = c `elem` boardFilled board
+isOccupied board c = c `S.member` boardFilled board
 
 isEmptyPosition :: Board -> Cell -> Bool
 isEmptyPosition board c@(Cell x y) = 0 <= x && x < boardWidth board &&
@@ -82,7 +90,7 @@ instance Show Board where
 data GameState = GameState { gsGameOver             :: Bool
                            , gsUnitsPlaced          :: Int
                            , gsCurrentUnit          :: Maybe Unit
-                           , gsCurrentUnitHistory   :: [Unit]
+                           , gsCurrentUnitHistory   :: Set UnitPosition
                            , gsBoard                :: Board
                            , gsScore                :: Int
                            , gsLinesClearedLastMove :: Int
