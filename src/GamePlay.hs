@@ -31,7 +31,7 @@ applyOffsets :: Int -> Int -> Cell -> Cell
 applyOffsets x y (Cell cx cy) = Cell (x + cx) (y + cy)
 
 isValidUnitPosition :: Board -> Unit -> Bool
-isValidUnitPosition board unit = all (\(Cell x y) -> isEmptyPosition board x y) (unitMembers unit)
+isValidUnitPosition board unit = all (isEmptyPosition board) (unitMembers unit)
 
 unitRotateClockwise :: Unit -> Unit
 unitRotateClockwise (Unit cells pivot) = Unit (rotateClockwiseAround pivot cells) pivot
@@ -55,7 +55,7 @@ addUnitCellsToBoard board unit = board { boardFilled = boardFilled board ++ unit
 clearLines :: Board -> (Int, Board)
 clearLines board = (numFullLines, board { boardFilled = updatedBoardCells })
   where
-    toClear = linesToClear board
+    toClear = rowsToClear board
     numFullLines = length toClear
     updatedBoardCells = foldl removeRow (boardFilled board) toClear
     removeRow oldCells row = mapMaybe (removeOrMoveCell row) oldCells
@@ -65,12 +65,11 @@ clearLines board = (numFullLines, board { boardFilled = updatedBoardCells })
     removeOrMoveCell _    cell                 = Just cell
 
 
-linesToClear :: Board -> [Int]
-linesToClear board = filter fullRow [0..(boardHeight board - 1)]
-  where fullRow y = and [isOccupied board x y | x <- boardXs board]
+rowsToClear :: Board -> [Int]
+rowsToClear board = filter fullRow [0..(boardHeight board - 1)]
+  where fullRow y = and [isOccupied board (Cell x y) | x <- boardXs board]
 
 
--- TODO: prevent repeating previously-seen positions
 -- An AI can use this function to see what effect its command will have
 playCommand :: GameState -> Command -> (CommandResult, GameState)
 playCommand gs _   | gsGameOver gs = (IllegalCommand, gs)
@@ -93,7 +92,6 @@ playCommand gs cmd =
                                  , gsLinesClearedLastMove = 0
                                  }
     saveCommand s = s { gsCommandHistory = gsCommandHistory gs ++ [cmd] }
-
 
 
 endGame :: GameState -> GameState
@@ -145,6 +143,8 @@ makeGameState problem seed = GameState { gsGameOver = False   -- Assumes problem
     randomUnits = map (problemUnits problem !!) randomUnitIndices
     units = map (spawnUnit board) $ take (problemSourceLength problem) randomUnits
 
+createBoard :: Problem -> Board
+createBoard p = Board (problemWidth p) (problemHeight p) (problemFilled p)
 
 gameBoardWithCurrentUnit :: GameState -> Board
 gameBoardWithCurrentUnit gs =
@@ -178,11 +178,4 @@ applyRawCommand (Turn Clockwise) = unitRotateClockwise
 applyRawCommand (Turn AntiClockwise) = unitRotateAntiClockwise
 
 
-
-------------------------------------------------------------------------------
--- Public API
-------------------------------------------------------------------------------
-
-createBoard :: Problem -> Board
-createBoard p = Board (problemWidth p) (problemHeight p) (problemFilled p)
 

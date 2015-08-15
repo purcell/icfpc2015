@@ -15,7 +15,6 @@ data Cell = Cell { cellX :: Int
                  , cellY :: Int
                  } deriving (Show, Eq, Ord)
 
-
 data Problem = Problem { problemId           :: Int
                        , problemUnits        :: [Unit]
                        , problemWidth        :: Int
@@ -66,18 +65,18 @@ boardXs board = [0..(boardWidth board - 1)]
 boardYs :: Board -> [Int]
 boardYs board = [0..(boardHeight board - 1)]
 
-isOccupied :: Board -> Int -> Int -> Bool
-isOccupied board x y = Cell x y `elem` boardFilled board
+isOccupied :: Board -> Cell -> Bool
+isOccupied board c = c `elem` boardFilled board
 
-isEmptyPosition :: Board -> Int -> Int -> Bool
-isEmptyPosition board x y = 0 <= x && x < boardWidth board &&
-                            0 <= y && y < boardHeight board &&
-                            not (isOccupied board x y)
+isEmptyPosition :: Board -> Cell -> Bool
+isEmptyPosition board c@(Cell x y) = 0 <= x && x < boardWidth board &&
+                                     0 <= y && y < boardHeight board &&
+                                     not (isOccupied board c)
 
 instance Show Board where
   show board = intercalate "\n" $ map showRow (boardYs board)
-    where showRow y = (if odd y then " " else "") ++ unwords [showCell x y | x <- boardXs board]
-          showCell x y = if isOccupied board x y then "⬢" else "⬡"
+    where showRow y = (if odd y then " " else "") ++ unwords [showCell (Cell x y) | x <- boardXs board]
+          showCell c = if isOccupied board c then "⬢" else "⬡"
 
 -- The game state an AI sees
 data GameState = GameState { gsGameOver             :: Bool
