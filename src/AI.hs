@@ -1,7 +1,7 @@
 module AI where
 
 import           Control.Monad.State.Lazy
-import           Data.Foldable            (Foldable (..), maximumBy)
+import           Data.Foldable            (maximumBy)
 import           Data.Function            (on)
 import           Data.Maybe               (fromJust)
 import           Data.Set                 (Set)
@@ -54,14 +54,14 @@ unfoldUntil f gs =
     legal _ = True
 
 
-nextMovesUntil :: (GameState -> Bool) -> GameState -> [GameState]
-nextMovesUntil f gs = filter f $ walkTree (stateTreeUntil f gs)
+nextLockedPlacements :: GameState -> [GameState]
+nextLockedPlacements gs = filter locked $ walkTree (stateTreeUntil locked gs)
+  where
+    locked = (gsUnitsPlaced gs <) . gsUnitsPlaced
 
 
 bestUnitPlacement :: GameState -> GameState
-bestUnitPlacement gs = maximumBy (compare `on` turnFitness gs) $ take 1000 $ nextMovesUntil ((unitsSoFar <) . gsUnitsPlaced) gs
-  where
-    unitsSoFar = gsUnitsPlaced gs
+bestUnitPlacement gs = maximumBy (compare `on` turnFitness gs) $ take 1000 $ nextLockedPlacements gs
 
 
 
