@@ -2,10 +2,13 @@ module GamePlay
        --(createGame)
        where
 
-import           Data.Maybe (mapMaybe)
-import qualified Data.Set   as S
-import           Random     (getContestGen, randomInts)
-import           Rotation   (rotateAntiClockwiseAround, rotateClockwiseAround)
+import qualified Data.Foldable as F
+import           Data.Maybe    (mapMaybe)
+import qualified Data.Set      as S
+import           Prelude       hiding (maximum, minimum)
+import           Random        (getContestGen, randomInts)
+import           Rotation      (rotateAntiClockwiseAround,
+                                rotateClockwiseAround)
 import           Types
 
 ------------------------------------------------------------------------------
@@ -13,23 +16,22 @@ import           Types
 ------------------------------------------------------------------------------
 
 spawnUnit :: Board -> Unit -> Unit
-spawnUnit board (Unit cells pivot) = Unit { unitMembers = map offsetCell cells
+spawnUnit board (Unit cells pivot) = Unit { unitMembers = S.map offsetCell cells
                                           , unitPivot = offsetCell pivot
                                           }
   where offsetCell = applyOffsets initialOffsetX initialOffsetY
         initialOffsetY = negate unitMinY
         initialOffsetX = (boardWidth board - (1 + unitMaxX - unitMinX)) `div` 2 - unitMinX
-        unitMinY = minimum $ map cellY cells
-        unitMinX = minimum unitCellXs
-        unitMaxX = maximum unitCellXs
-        unitCellXs = map cellX cells
+        unitMinY = F.minimum $ S.map cellY cells
+        unitMinX = F.minimum $ S.map cellX cells
+        unitMaxX = F.maximum $ S.map cellX cells
 
 
 applyOffsets :: Int -> Int -> Cell -> Cell
 applyOffsets x y (Cell cx cy) = Cell (x + cx) (y + cy)
 
 isValidUnitPosition :: Board -> Unit -> Bool
-isValidUnitPosition board unit = all (isEmptyPosition board) (unitMembers unit)
+isValidUnitPosition board unit = all (isEmptyPosition board) (S.toList (unitMembers unit))
 
 unitRotateClockwise :: Unit -> Unit
 unitRotateClockwise (Unit cells pivot) = Unit (rotateClockwiseAround pivot cells) pivot
@@ -38,7 +40,7 @@ unitRotateAntiClockwise :: Unit -> Unit
 unitRotateAntiClockwise (Unit cells pivot) = Unit (rotateAntiClockwiseAround pivot cells) pivot
 
 unitTranslate :: (Cell -> Cell) -> Unit -> Unit
-unitTranslate f (Unit cells pivot) = Unit (map f cells) (f pivot)
+unitTranslate f (Unit cells pivot) = Unit (S.map f cells) (f pivot)
 
 
 
@@ -47,7 +49,7 @@ unitTranslate f (Unit cells pivot) = Unit (map f cells) (f pivot)
 ------------------------------------------------------------------------------
 
 addUnitCellsToBoard :: Board -> Unit -> Board
-addUnitCellsToBoard board unit = board { boardFilled = boardFilled board `S.union` S.fromList (unitMembers unit) }
+addUnitCellsToBoard board unit = board { boardFilled = boardFilled board `S.union` unitMembers unit }
 
 
 clearLines :: Board -> (Int, Board)
@@ -55,8 +57,8 @@ clearLines board = (numFullLines, board { boardFilled = updatedBoardCells })
   where
     toClear = rowsToClear board
     numFullLines = length toClear
-    updatedBoardCells = S.fromList $ foldl removeRow (S.toList (boardFilled board)) toClear
-    removeRow oldCells row = mapMaybe (removeOrMoveCell row) oldCells
+    updatedBoardCells = foldl removeRow (boardFilled board) toClear
+    removeRow oldCells row = S.fromList $ mapMaybe (removeOrMoveCell row) $ S.toList oldCells
     removeOrMoveCell :: Int -> Cell -> Maybe Cell
     removeOrMoveCell row (Cell _ y) | y == row = Nothing
     removeOrMoveCell row (Cell x y) | y < row  = Just (Cell x (y + 1))
@@ -84,7 +86,7 @@ playCommand gs cmd =
   where
     Just currentUnit = gsCurrentUnit gs
     proposedUnit = applyRawCommand cmd currentUnit
-    proposedUnitPosition = unitPosition proposedUnit
+    proposedUnitPosition = unitMembers proposedUnit
     moveToProposedPosition s = s { gsCurrentUnit = Just proposedUnit
                                  , gsCurrentUnitHistory = S.insert proposedUnitPosition (gsCurrentUnitHistory s)
                                  , gsLinesClearedLastMove = 0
@@ -110,14 +112,14 @@ lockAndScoreCurrentUnit gs = gs { gsBoard = newBoard
         lineBonus = if gsLinesClearedLastMove gs > 1
                     then ((gsLinesClearedLastMove gs - 1) * points) `div` 10
                     else 0
-        size = length (unitMembers currentUnit)
+        size = S.size (unitMembers currentUnit)
 
 
 switchToNextUnit :: GameState -> GameState
 switchToNextUnit gs = case gsUpcomingUnits gs of
   (u:us) | validPosition u -> gs { gsCurrentUnit = Just u
                                  , gsUpcomingUnits = us
-                                 , gsCurrentUnitHistory = S.singleton (unitPosition u) }
+                                 , gsCurrentUnitHistory = S.singleton (unitMembers u) }
   _                        -> endGame gs
   where validPosition = isValidUnitPosition (gsBoard gs)
 

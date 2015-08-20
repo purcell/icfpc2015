@@ -1,6 +1,6 @@
 module Types where
 
-import           Data.List (intercalate, sort)
+import           Data.List (intercalate)
 import           Data.Set  (Set)
 import qualified Data.Set  as S
 
@@ -9,7 +9,9 @@ import qualified Data.Set  as S
 -- Problem definitions
 ------------------------------------------------------------------------------
 
-data Unit = Unit { unitMembers :: [Cell] -- TODO sorted bag
+type UnitPosition = Set Cell
+
+data Unit = Unit { unitMembers :: UnitPosition
                  , unitPivot   :: Cell
                  } deriving Show
 
@@ -66,12 +68,6 @@ boardXs :: Board -> [Int]
 boardXs board = [0..(boardWidth board - 1)]
 boardYs :: Board -> [Int]
 boardYs board = [0..(boardHeight board - 1)]
-
-newtype UnitPosition = UnitPosition { positionCells :: [Cell] }
-                     deriving (Show, Eq, Ord)
-
-unitPosition :: Unit -> UnitPosition
-unitPosition = UnitPosition . sort . unitMembers
 
 isOccupied :: Board -> Cell -> Bool
 isOccupied board c = c `S.member` boardFilled board

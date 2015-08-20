@@ -47,15 +47,11 @@ unfoldUntil f gs =
       put (thisPosition `S.insert` seen)
       return (gs, legalResults)
   where
-    thisPosition = positionFingerprint gs
+    thisPosition = unitMembers $ fromJust $ gsCurrentUnit gs
     legalResults = map snd $ filter legal possibleResults
     possibleResults = map (playCommand gs) allCommands
     legal (IllegalCommand, _) = False
     legal _ = True
-
-
-positionFingerprint :: GameState -> UnitPosition
-positionFingerprint = unitPosition . fromJust . gsCurrentUnit
 
 
 nextMovesUntil :: (GameState -> Bool) -> GameState -> [GameState]
