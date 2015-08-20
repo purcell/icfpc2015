@@ -50,10 +50,10 @@ parseProblemFromFile file = parseProblem <$> BSL.readFile file
 ------------------------------------------------------------------------------
 
 instance ToJSON Solution where
-  toJSON (Solution pid seed commands) = object [ "problemId" .= pid
-                                              , "seed" .= seed
-                                              , "solution" .= commands
-                                              ]
+  toJSON (Solution pid seed commands _) = object [ "problemId" .= pid
+                                                 , "seed" .= seed
+                                                 , "solution" .= commands
+                                                 ]
 
 encodeSolutions :: [Solution] -> String
 encodeSolutions solutions = BSL.unpack $ encode solutions

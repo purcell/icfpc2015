@@ -36,6 +36,7 @@ data Problem = Problem { problemId           :: Int
 data Solution = Solution { solutionId       :: Int
                          , solutionSeed     :: Int
                          , solutionCommands :: String
+                         , solutionScore    :: Int
                          } deriving Show
 
 ------------------------------------------------------------------------------

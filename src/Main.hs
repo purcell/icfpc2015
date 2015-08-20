@@ -2,6 +2,7 @@ module Main where
 
 import           AI
 import           Control.Applicative ((<$>))
+import           Control.Monad       (forM)
 import           Data.Maybe          (fromJust)
 import           GamePlay
 import           JSON
@@ -28,7 +29,7 @@ runSolution problem seed = do
   hPutStrLn stderr $ "Problem " ++ show(problemId problem) ++ ", seed " ++ show seed
   hPutStrLn stderr "========================================================="
   dumpBoard gameState'
-  return $ Solution (problemId problem) seed (commandHistoryAsString gameState')
+  return $ Solution (problemId problem) seed (commandHistoryAsString gameState') (gsScore gameState')
   where
        gameState = makeGameState problem seed
        gameState' = solver gameState
@@ -60,7 +61,10 @@ printCommands gs (c:cs) = do
 
 main :: IO ()
 main = do
-  file <- head <$> getArgs
-  problem <- fromJust <$> parseProblemFromFile file
-  solutions <- mapM (runSolution problem) (problemSourceSeeds problem)
+  files <- getArgs
+  solutions <- fmap concat $ forM files $ \file ->
+    do
+      problem <- fromJust <$> parseProblemFromFile file
+      mapM (runSolution problem) (problemSourceSeeds problem)
   putStrLn $ encodeSolutions solutions
+  hPutStrLn stderr $ "Total score: " ++ show (sum (map solutionScore solutions))
